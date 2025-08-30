@@ -1,14 +1,13 @@
 #include <iostream>
 #include <math.h>
 
-__global__ void copy(float *odata, float *idata, int N)
-{
-	int index = threadIdx.x;
-	// int stride = 1;
+__global__ void copy(float *odata, float *idata, int N) {
+  int index = threadIdx.x;
+  // int stride = 1;
 
-	for (int i = index; i < N; i++)
-		for (int j = 0; j < N; j++)
-			odata[i * N + j] = idata[i * N + j];
+  for (int i = index; i < N; i++)
+    for (int j = 0; j < N; j++)
+      odata[i * N + j] = idata[i * N + j];
 }
 
 int main()

@@ -4,17 +4,24 @@
 #define TILE_DIM 32
 #define BLOCK_ROWS 8
 
-__global__ void transpose(float *odata, float *idata, int N)
+__global__ void copy(float *odata, float *idata, int N)
 {
+	__shared__ float tile[TILE_DIM * TILE_DIM];
+	
 	int x = blockIdx.x * TILE_DIM + threadIdx.x;
 	int y = blockIdx.y * TILE_DIM + threadIdx.y;
-	int width = gridDim.x * TILE_DIM;
+	int width = N;
 
 
 	if (x >= N || y >= N)
 		return ;
 	for (int j = 0; j < TILE_DIM; j += BLOCK_ROWS)
-		odata[x * width + (y + j)] = idata[(y + j) * width + x];
+		tile[(threadIdx.y + j) * TILE_DIM + threadIdx.x] = idata[(y + j) * width + x];
+		
+	__syncthreads();
+		
+	for (int j = 0; j < TILE_DIM; j += BLOCK_ROWS)
+		odata[(y + j) * width + x] = tile[(threadIdx.y + j ) * TILE_DIM + threadIdx.x];
 }
 
 int main()
@@ -45,7 +52,7 @@ int main()
 	dim3 grid(blocksX, blocksY);
 	dim3 threads(TILE_DIM, BLOCK_ROWS);
 
-	transpose<<<grid, threads>>>(out, in, N);
+	copy<<<grid, threads>>>(out, in, N);
 
 	cudaDeviceSynchronize();
 
@@ -53,7 +60,7 @@ int main()
 	for (int i = 0; i < N; i++)
 		for (int j = 0; j < N; j++)
 		{
-			float expected = sin(j) + cos(i) + (i*j*0.001f);
+			float expected = sin(i) + cos(j) + (i*j*0.001f);
 			float actual = out[i * N + j];
 			float error = fabs(actual - expected);
 			if (error > 1e-5) {

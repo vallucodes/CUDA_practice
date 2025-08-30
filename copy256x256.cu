@@ -1,7 +1,7 @@
 #include <iostream>
 #include <math.h>
 
-__global__ void copy(float *odata, float *idata, int N)
+__global__ void transpose(float *odata, float *idata, int N)
 {
 	int index = threadIdx.x + blockIdx.x * blockDim.x;
 	// printf("index: %i\n", index);
@@ -29,7 +29,7 @@ int main()
 	int threadsPerBlock = 256;
 	int blocks = (N * N + 255) / 256;
 
-	copy<<<blocks, threadsPerBlock>>>(out, in, N);
+	transpose<<<blocks, threadsPerBlock>>>(out, in, N);
 
 	cudaDeviceSynchronize();
 
